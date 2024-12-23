@@ -33,7 +33,7 @@ namespace AdventureWorks.Controllers
             try
             {
                 var storedUser = _userService.GetUser(user?.UserName);
-                if (!_userService.IsAuthenticated(user?.PasswordHash, storedUser?.PasswordHash))
+                if (storedUser is null || !_userService.IsAuthenticated(user?.PasswordHash, storedUser?.PasswordHash))
                 {
                     return Unauthorized();
                 }

@@ -1,12 +1,14 @@
 ﻿using AdventureWorks.Models.Person;
 using AdventureWorks.Repositories;
 using AdventureWorks.Utility;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 
 namespace AdventureWorks.Controllers
 {
     [Route("api/[controller]")]
     [ApiController]
+    [Authorize]
     public class PersonController : ControllerBase
     {
         private readonly ILogger<PersonController> _logger;
