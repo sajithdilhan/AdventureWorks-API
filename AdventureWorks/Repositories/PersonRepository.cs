@@ -9,26 +9,29 @@ namespace AdventureWorks.Repositories
         private readonly ApplicationDbContext _dbcontext;
         private readonly ILogger<PersonRepository> _logger;
 
-        public PersonRepository(ApplicationDbContext applicationDbContext, ILogger<PersonRepository> logger)
+        public PersonRepository(ILogger<PersonRepository> logger, ApplicationDbContext applicationDbContext)
         {
             _dbcontext = applicationDbContext;
             _logger = logger;
         }
 
-        public async Task<Person?> GetPersonAsync(int id)
+        public async Task<Person?> GetPersonAsync(int id, bool includeDetails)
         {
             try
             {
-                return await _dbcontext.Person
-                     .AsNoTracking()
+                var query = _dbcontext.Persons.AsNoTracking();
+                if (includeDetails)
+                {
+                    query = query
                      .Include(p => p.EmailAddresses)
                      .Include(p => p.PersonPhones)
-                     .AsSplitQuery()
-                     .FirstOrDefaultAsync(p => p.BusinessEntityID == id);
+                     .AsSplitQuery();
+                }
+                return await query.FirstOrDefaultAsync(p => p.BusinessEntityID == id);
             }
-            catch (Exception)
+            catch (Exception ex)
             {
-                _logger.LogError($"Failed to get people from database with ID {id}");
+                _logger.LogError("Failed to get people from database with ID {}. {}", id, ex.Message);
                 throw;
             }
         }
@@ -37,13 +40,13 @@ namespace AdventureWorks.Repositories
         {
             try
             {
-                var query =  _dbcontext.Person
+                var query = _dbcontext.Persons
                      .AsNoTrackingWithIdentityResolution()
                      .Include(p => p.EmailAddresses)
                      .Include(p => p.PersonPhones)
                      .AsSplitQuery();
 
-                if (queryParam?.SortBy == "FirstName" )
+                if (queryParam?.SortBy == "FirstName")
                 {
                     if (queryParam?.SortOrder == "desc")
                     {
@@ -77,18 +80,41 @@ namespace AdventureWorks.Repositories
                 return await query.ToListAsync();
 
             }
-            catch (Exception)
+            catch (Exception ex)
             {
-                _logger.LogError("Failed to get people from database");
+                _logger.LogError("Failed to get people from database. {}", ex.Message);
                 throw;
             }
         }
 
         async Task<Person> IPersonRepository.CreatePersonAsync(Person person)
         {
-            await _dbcontext.Person.AddAsync(person);
+            await _dbcontext.Persons.AddAsync(person);
             await _dbcontext.SaveChangesAsync();
             return person;
+        }
+
+        public async Task<bool> DeletePersonAsync(int id)
+        {
+            var person = await GetPersonAsync(id, true);
+            if (person == null)
+            {
+                return false;
+            }
+            _dbcontext.Persons.Remove(person);
+            int result = await _dbcontext.SaveChangesAsync();
+            if (result > 0)
+            {
+                return true;
+            }
+            return false;
+        }
+
+        public Task<Person> UpdatePersonAsync(Person person)
+        {
+            _dbcontext.Persons.Update(person);
+            _dbcontext.SaveChanges();
+            return Task.FromResult(person);
         }
     }
 }

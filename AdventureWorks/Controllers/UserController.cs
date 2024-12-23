@@ -23,7 +23,7 @@ namespace AdventureWorks.Controllers
         [HttpPost]
         [Route("token")]
         [AllowAnonymous]
-        public IActionResult Token([FromBody] AppUserDto user)
+        public async Task<IActionResult> Token([FromBody] AppUserDto user)
         {
             if (user == null || user.UserName == null || user.PasswordHash == null)
             {
@@ -32,8 +32,8 @@ namespace AdventureWorks.Controllers
 
             try
             {
-                var storedUser = _userService.GetUser(user?.UserName);
-                if (storedUser is null || !_userService.IsAuthenticated(user?.PasswordHash, storedUser?.PasswordHash))
+                var storedUser = await _userService.GetUserByUsernameAsync(user.UserName);
+                if (storedUser is null || !_userService.IsAuthenticated(user?.PasswordHash, storedUser.PasswordHash))
                 {
                     return Unauthorized();
                 }
@@ -43,8 +43,8 @@ namespace AdventureWorks.Controllers
             }
             catch (Exception)
             {
-                _logger.LogError("");
-                return Problem();
+                _logger.LogError("Failed to authenticate user. {}", user.UserName);
+                return Unauthorized();
             }
 
         }

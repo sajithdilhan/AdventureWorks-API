@@ -15,7 +15,10 @@ var builder = WebApplication.CreateBuilder(args);
 // Add services to the container.
 var jwtOptionsSection = builder.Configuration.GetRequiredSection("Jwt");
 builder.Services.Configure<JwtOptions>(jwtOptionsSection);
-builder.Services.AddDbContext<ApplicationDbContext>();
+builder.Services.AddDbContext<ApplicationDbContext>(options =>
+{
+    options.UseSqlServer(builder.Configuration.GetConnectionString("AdventureWorks"));
+});
 builder.Services.AddAuthentication(options =>
     {
         options.DefaultAuthenticateScheme = JwtBearerDefaults.AuthenticationScheme;
@@ -25,7 +28,7 @@ builder.Services.AddAuthentication(options =>
     .AddJwtBearer("Bearer", jwtOptions =>
     {
         var configKey = jwtOptionsSection["Key"];
-        var key = Encoding.UTF8.GetBytes(configKey);
+        var key = Encoding.UTF8.GetBytes(configKey?? string.Empty);
 
         jwtOptions.TokenValidationParameters = new TokenValidationParameters
         {
@@ -35,25 +38,27 @@ builder.Services.AddAuthentication(options =>
             ValidateIssuer = true,
             ValidateAudience = true,
             ValidateLifetime = false,
-            ValidateIssuerSigningKey = true
+            ValidateIssuerSigningKey = true,
+            
         };
     });
-builder.Services.AddAuthorization();
+builder.Services.AddAuthorization(options =>
+{
+    options.AddPolicy(IdentityData.AdminUserPolicyName, policy => policy.RequireRole(IdentityData.AdminUserRoleName));
+    options.AddPolicy(IdentityData.NormalUserPolicyName, policy => policy.RequireRole(IdentityData.NormalUserRoleName));
+});
 builder.Services.AddControllers().AddJsonOptions(options =>
 {
     options.JsonSerializerOptions.ReferenceHandler = ReferenceHandler.Preserve;
     options.JsonSerializerOptions.WriteIndented = true; // Optional: for better readability
 });
-// Learn more about configuring OpenAPI at https://aka.ms/aspnet/openapi
 builder.Services.AddOpenApi();
-
 builder.Services.AddApiVersioning(options =>
 {
     options.DefaultApiVersion = new ApiVersion(1, 0);
     options.AssumeDefaultVersionWhenUnspecified = true;
     options.ReportApiVersions = true;
 });
-
 builder.Services.AddSwaggerGen(options =>
 {
     options.SwaggerDoc("v1", new OpenApiInfo { Title = "Adventure Works", Version = "v1" });
@@ -83,14 +88,11 @@ builder.Services.AddSwaggerGen(options =>
     });
 });
 
-builder.Services.AddDbContext<ApplicationDbContext>(options =>
-{
-    options.UseSqlServer(builder.Configuration.GetConnectionString("AdventureWorks"));
-});
-
-builder.Services.AddScoped<IPersonRepository, PersonRepository>();
+// Add custom services
+builder.Services.AddTransient<IPersonRepository, PersonRepository>();
 builder.Services.AddTransient<IUserService, UserService>();
 builder.Services.AddTransient<ITokenService, TokenService>();
+builder.Services.AddTransient<IUserRepository, UserRepository>();
 
 var app = builder.Build();
 

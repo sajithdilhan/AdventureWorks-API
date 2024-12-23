@@ -9,7 +9,7 @@ namespace AdventureWorks.Models.Identity
         [JsonIgnore]
         public Guid Id { get; set; }
         [JsonIgnore]
-        public string? Role { get; set; } = "User";
+        public string Role { get; set; } = "User";
 
         public string UserName { get; set; } = string.Empty;
         [JsonIgnore]

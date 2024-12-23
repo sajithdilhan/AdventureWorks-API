@@ -4,7 +4,8 @@ namespace AdventureWorks.Services
 {
     public interface IUserService
     {
-        AppUserDto? GetUser(string? username);
+        Task<AppUserDto?> GetUserByUsernameAsync(string username);
+        Task<AppUserDto?> GetUserByIdAsync(Guid id);
         bool IsAuthenticated(string? password, string? passwordHash);
     }
 }

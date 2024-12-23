@@ -1,9 +1,6 @@
-﻿using AdventureWorks.Models.Person;
+﻿using AdventureWorks.Models.Identity;
+using AdventureWorks.Models.Person;
 using Microsoft.EntityFrameworkCore;
-using System.Net.Mail;
-using AdventureWorks.Models.Identity;
-using Microsoft.AspNetCore.Identity;
-using Microsoft.AspNetCore.Identity.EntityFrameworkCore;
 
 namespace AdventureWorks.Database
 {
@@ -35,13 +32,17 @@ namespace AdventureWorks.Database
             modelBuilder.Entity<EmailAddressModel>(entity =>
             {
                 entity.Property(e => e.EmailAddressID)
-                      .ValueGeneratedOnAdd(); 
+                      .ValueGeneratedOnAdd();
             });
+
+            modelBuilder.Entity<Person>()
+        .ToTable(tb => tb.UseSqlOutputClause(false));
         }
 
-        public DbSet<Person> Person { get; set; }
-        public DbSet<EmailAddressModel> EmailAddress { get; set; }
-        public DbSet<PersonPhone> PersonPhone { get; set; }
-        public DbSet<PhoneNumberType> PhoneNumberType { get; set; }
+        public DbSet<Person> Persons { get; set; }
+        public DbSet<EmailAddressModel> EmailAddresses { get; set; }
+        public DbSet<PersonPhone> PersonPhones { get; set; }
+        public DbSet<PhoneNumberType> PhoneNumberTypes { get; set; }
+        public DbSet<User> AppUsers { get; set; }
     }
 }

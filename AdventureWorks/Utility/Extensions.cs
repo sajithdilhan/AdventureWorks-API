@@ -1,4 +1,5 @@
-﻿using AdventureWorks.Models.Person;
+﻿using AdventureWorks.Models.Identity;
+using AdventureWorks.Models.Person;
 
 namespace AdventureWorks.Utility;
 
@@ -35,7 +36,7 @@ public static class Extensions
     {
         return new Person()
         {
-            BusinessEntityID = personDto.BusinessEntityId,
+            BusinessEntityID =  personDto.BusinessEntityId,
             Title = personDto.Title,
             AdditionalContactInfo = personDto.AdditionalContactInfo,
             Demographics = personDto.Demographics,
@@ -51,6 +52,18 @@ public static class Extensions
             { PhoneNumber = p, BusinessEntityID = personDto.BusinessEntityId, ModifiedDate = DateTime.Now, PhoneNumberTypeID =1 }).ToList(),
             NameStyle = false,
             ModifiedDate = DateTime.Now,
+        };
+    }
+
+    public static AppUserDto ToAppUserDto(this User user)
+    {
+        return new AppUserDto()
+        {
+            Email = user.Email,
+            Id = user.Id,
+            UserName = user.UserName.Trim(),
+            PasswordHash = user.PasswordHash.Trim(),
+            Role = user.Role,
         };
     }
 }
