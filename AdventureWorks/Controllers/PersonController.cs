@@ -1,4 +1,6 @@
-﻿using AdventureWorks.Repositories;
+﻿using AdventureWorks.Models.Person;
+using AdventureWorks.Repositories;
+using AdventureWorks.Utility;
 using Microsoft.AspNetCore.Mvc;
 
 namespace AdventureWorks.Controllers
@@ -17,11 +19,11 @@ namespace AdventureWorks.Controllers
         }
 
         [HttpGet(Name = "GetPerson")]
-        public async Task<IActionResult> GetPersonsAsync()
+        public async Task<IActionResult> GetPersonsAsync([FromQuery] PersonQuery query)
         {
             try
             {
-                var people = await _personRepository.GetPersonsAsync();
+                var people = await _personRepository.GetPersonsAsync(query);
                 if (people.Count == 0)
                 {
                     return NotFound();
@@ -29,7 +31,7 @@ namespace AdventureWorks.Controllers
 
                 _logger.LogInformation("Returning {Count} people", people.Count);
 
-                return Ok(people);
+                return Ok(people.ToPersonDto());
             }
             catch (Exception ex)
             {
@@ -41,7 +43,7 @@ namespace AdventureWorks.Controllers
 
         [HttpGet]
         [Route("{id}")]
-        public async Task<IActionResult> GetPersonByIdAsync(int id)
+        public async Task<IActionResult> GetPersonByIdAsync([FromRoute] int id)
         {
             try
             {
@@ -51,8 +53,28 @@ namespace AdventureWorks.Controllers
                     return NotFound();
                 }
                 _logger.LogInformation("Returning person with ID {ID}", id);
-                //var serialized = JsonSerializer.Serialize(person);
-                return Ok(person);
+
+                return Ok(person.ToPersonDto());
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex.Message);
+                return Problem(detail: "Internal Server Error", statusCode: 500);
+            }
+        }
+
+        [HttpPost]
+        public async Task<IActionResult> CreatePersonAsync([FromBody] PersonDto personDto)
+        {
+            if (ModelState.IsValid == false)
+            {
+                return BadRequest(ModelState);
+            }
+            try
+            {
+                var person = personDto.ToPerson();
+                await _personRepository.CreatePersonAsync(person);
+                return CreatedAtRoute("GetPerson", new { id = person.BusinessEntityID }, person.ToPersonDto());
             }
             catch (Exception ex)
             {

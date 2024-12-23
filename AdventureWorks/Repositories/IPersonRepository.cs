@@ -4,7 +4,8 @@ namespace AdventureWorks.Repositories
 {
     public interface IPersonRepository
     {
-        Task<List<Person>> GetPersonsAsync();
+        Task<List<Person>> GetPersonsAsync(PersonQuery query);
         Task<Person?> GetPersonAsync(int id);
+        Task<Person> CreatePersonAsync(Person person);
     }
 }

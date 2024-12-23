@@ -1,15 +1,45 @@
 using AdventureWorks.Database;
+using AdventureWorks.Models.Identity;
 using AdventureWorks.Repositories;
 using Asp.Versioning;
+using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.OpenApi.Models;
-using System.Reflection;
+using System.Text;
 using System.Text.Json.Serialization;
+using Microsoft.AspNetCore.Authentication.JwtBearer;
+using Microsoft.IdentityModel.Tokens;
+using AdventureWorks.Services;
 
 var builder = WebApplication.CreateBuilder(args);
 
 // Add services to the container.
+var jwtOptionsSection = builder.Configuration.GetRequiredSection("Jwt");
+builder.Services.Configure<JwtOptions>(jwtOptionsSection);
+builder.Services.AddDbContext<ApplicationDbContext>();
+builder.Services.AddAuthentication(options =>
+    {
+        options.DefaultAuthenticateScheme = JwtBearerDefaults.AuthenticationScheme;
+        options.DefaultChallengeScheme = JwtBearerDefaults.AuthenticationScheme;
+        options.DefaultScheme = JwtBearerDefaults.AuthenticationScheme;
+    })
+    .AddJwtBearer("Bearer", jwtOptions =>
+    {
+        var configKey = jwtOptionsSection["Key"];
+        var key = Encoding.UTF8.GetBytes(configKey);
 
+        jwtOptions.TokenValidationParameters = new TokenValidationParameters
+        {
+            ValidIssuer = jwtOptionsSection["Issuer"],
+            ValidAudience = jwtOptionsSection["Audience"],
+            IssuerSigningKey = new SymmetricSecurityKey(key),
+            ValidateIssuer = true,
+            ValidateAudience = true,
+            ValidateLifetime = false,
+            ValidateIssuerSigningKey = true
+        };
+    });
+builder.Services.AddAuthorization();
 builder.Services.AddControllers().AddJsonOptions(options =>
 {
     options.JsonSerializerOptions.ReferenceHandler = ReferenceHandler.Preserve;
@@ -28,11 +58,6 @@ builder.Services.AddApiVersioning(options =>
 builder.Services.AddSwaggerGen(options =>
 {
     options.SwaggerDoc("v1", new OpenApiInfo { Title = "Adventure Works", Version = "v1" });
-
-    // Add support for XML comments
-    var xmlFile = $"{Assembly.GetExecutingAssembly().GetName().Name}.xml";
-    var xmlPath = Path.Combine(AppContext.BaseDirectory, xmlFile);
-    //options.IncludeXmlComments(xmlPath);
 });
 
 builder.Services.AddDbContext<ApplicationDbContext>(options =>
@@ -41,6 +66,8 @@ builder.Services.AddDbContext<ApplicationDbContext>(options =>
 });
 
 builder.Services.AddScoped<IPersonRepository, PersonRepository>();
+builder.Services.AddTransient<IUserService, UserService>();
+builder.Services.AddTransient<ITokenService, TokenService>();
 
 var app = builder.Build();
 

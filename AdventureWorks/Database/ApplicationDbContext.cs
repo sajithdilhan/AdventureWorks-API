@@ -1,5 +1,9 @@
 ﻿using AdventureWorks.Models.Person;
 using Microsoft.EntityFrameworkCore;
+using System.Net.Mail;
+using AdventureWorks.Models.Identity;
+using Microsoft.AspNetCore.Identity;
+using Microsoft.AspNetCore.Identity.EntityFrameworkCore;
 
 namespace AdventureWorks.Database
 {
@@ -27,9 +31,15 @@ namespace AdventureWorks.Database
 
             modelBuilder.Entity<EmailAddressModel>()
                 .HasKey(e => new { e.BusinessEntityID, e.EmailAddressID });
+
+            modelBuilder.Entity<EmailAddressModel>(entity =>
+            {
+                entity.Property(e => e.EmailAddressID)
+                      .ValueGeneratedOnAdd(); 
+            });
         }
 
-        public DbSet<Person?> Person { get; set; }
+        public DbSet<Person> Person { get; set; }
         public DbSet<EmailAddressModel> EmailAddress { get; set; }
         public DbSet<PersonPhone> PersonPhone { get; set; }
         public DbSet<PhoneNumberType> PhoneNumberType { get; set; }
