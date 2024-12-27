@@ -23,13 +23,12 @@ public class PersonDto
     [Required]
     public int EmailPromotion { get; set; }
 
+    [JsonIgnore]
     public string? AdditionalContactInfo { get; set; } 
-
+    [JsonIgnore]
     public string? Demographics { get; set; } 
 
     public DateTime ModifiedDate { get; set; }
-
     public List<string> EmailAddresses { get; set; } = new List<string>();
-
     public List<string> PhoneNumbers { get; set; } = new List<string>();
 }

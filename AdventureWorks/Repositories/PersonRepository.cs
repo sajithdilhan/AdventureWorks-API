@@ -15,6 +15,11 @@ namespace AdventureWorks.Repositories
             _logger = logger;
         }
 
+        public async Task<int> GetTotalCount(PersonQuery query)
+        {
+            return await _dbcontext.Persons.AsNoTracking().CountAsync();
+        }
+
         public async Task<Person?> GetPersonAsync(int id, bool includeDetails)
         {
             try
@@ -23,10 +28,11 @@ namespace AdventureWorks.Repositories
                 if (includeDetails)
                 {
                     query = query
-                     .Include(p => p.EmailAddresses)
-                     .Include(p => p.PersonPhones)
-                     .AsSplitQuery();
+                        .Include(p => p.EmailAddresses)
+                        .Include(p => p.PersonPhones)
+                        .AsSplitQuery();
                 }
+
                 return await query.FirstOrDefaultAsync(p => p.BusinessEntityID == id);
             }
             catch (Exception ex)
@@ -41,10 +47,10 @@ namespace AdventureWorks.Repositories
             try
             {
                 var query = _dbcontext.Persons
-                     .AsNoTrackingWithIdentityResolution()
-                     .Include(p => p.EmailAddresses)
-                     .Include(p => p.PersonPhones)
-                     .AsSplitQuery();
+                    .AsNoTrackingWithIdentityResolution()
+                    .Include(p => p.EmailAddresses)
+                    .Include(p => p.PersonPhones)
+                    .AsSplitQuery();
 
                 if (queryParam?.SortBy == "FirstName")
                 {
@@ -72,13 +78,13 @@ namespace AdventureWorks.Repositories
                 {
                     query = query.OrderBy(p => p.BusinessEntityID);
                 }
+
                 if (queryParam?.PageSize > 0)
                 {
                     query = query.Skip(queryParam.PageNumber * queryParam.PageSize).Take(queryParam.PageSize);
                 }
 
                 return await query.ToListAsync();
-
             }
             catch (Exception ex)
             {
@@ -101,20 +107,22 @@ namespace AdventureWorks.Repositories
             {
                 return false;
             }
+
             _dbcontext.Persons.Remove(person);
             int result = await _dbcontext.SaveChangesAsync();
             if (result > 0)
             {
                 return true;
             }
+
             return false;
         }
 
-        public Task<Person> UpdatePersonAsync(Person person)
+        public async Task<Person> UpdatePersonAsync(Person person)
         {
             _dbcontext.Persons.Update(person);
-            _dbcontext.SaveChanges();
-            return Task.FromResult(person);
+            await _dbcontext.SaveChangesAsync();
+            return person;
         }
     }
 }

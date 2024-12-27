@@ -37,9 +37,7 @@ builder.Services.AddAuthentication(options =>
             IssuerSigningKey = new SymmetricSecurityKey(key),
             ValidateIssuer = true,
             ValidateAudience = true,
-            ValidateLifetime = false,
-            ValidateIssuerSigningKey = true,
-            
+            ValidateIssuerSigningKey = true
         };
     });
 builder.Services.AddAuthorization(options =>
@@ -90,6 +88,7 @@ builder.Services.AddSwaggerGen(options =>
 
 // Add custom services
 builder.Services.AddTransient<IPersonRepository, PersonRepository>();
+builder.Services.AddTransient<IPersonService, PersonService>();
 builder.Services.AddTransient<IUserService, UserService>();
 builder.Services.AddTransient<ITokenService, TokenService>();
 builder.Services.AddTransient<IUserRepository, UserRepository>();
