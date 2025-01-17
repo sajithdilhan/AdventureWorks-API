@@ -50,7 +50,7 @@ namespace AdventureWorks.Controllers
         {
             try
             {
-                var person = await _personService.GetPersonAsync(id, true);
+                var person = await _personService.GetPersonByIdAsync(id, true);
                 if (person == null)
                 {
                     return NotFound();

@@ -1,6 +1,7 @@
 ﻿using AdventureWorks.Database;
 using AdventureWorks.Models.Person;
 using Microsoft.EntityFrameworkCore;
+using System.Linq.Expressions;
 
 namespace AdventureWorks.Repositories
 {
@@ -20,7 +21,7 @@ namespace AdventureWorks.Repositories
             return await _dbcontext.Persons.AsNoTracking().CountAsync();
         }
 
-        public async Task<Person?> GetPersonAsync(int id, bool includeDetails)
+        public async Task<Person?> GetPersonAsync(Expression<Func<Person, bool>> predicate, bool includeDetails)
         {
             try
             {
@@ -33,11 +34,11 @@ namespace AdventureWorks.Repositories
                         .AsSplitQuery();
                 }
 
-                return await query.FirstOrDefaultAsync(p => p.BusinessEntityID == id);
+                return await query.FirstOrDefaultAsync(predicate);
             }
             catch (Exception ex)
             {
-                _logger.LogError("Failed to get people from database with ID {}. {}", id, ex.Message);
+                _logger.LogError("Failed to get people from database. {}", ex.Message);
                 throw;
             }
         }
@@ -102,7 +103,7 @@ namespace AdventureWorks.Repositories
 
         public async Task<bool> DeletePersonAsync(int id)
         {
-            var person = await GetPersonAsync(id, true);
+            var person = await GetPersonAsync(x=>x.BusinessEntityID == id, false);
             if (person == null)
             {
                 return false;

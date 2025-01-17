@@ -99,7 +99,7 @@ namespace AdventureWorks_Tests.Controllers
             // Arrange
             var logger = new Mock<ILogger<PersonController>>();
             var personService = new Mock<IPersonService>();
-            personService.Setup(service => service.GetPersonAsync(It.IsAny<int>(), false)).ReturnsAsync(() => null);
+            personService.Setup(service => service.GetPersonByIdAsync(It.IsAny<int>(), false)).ReturnsAsync(() => null);
             var controller = new PersonController(logger.Object, personService.Object);
 
             // Act
@@ -116,7 +116,7 @@ namespace AdventureWorks_Tests.Controllers
             // Arrange
             var logger = new Mock<ILogger<PersonController>>();
             var personService = new Mock<IPersonService>();
-            personService.Setup(service => service.GetPersonAsync(It.IsAny<int>(), true)).ReturnsAsync(person1);
+            personService.Setup(service => service.GetPersonByIdAsync(It.IsAny<int>(), true)).ReturnsAsync(person1);
             var controller = new PersonController(logger.Object, personService.Object);
 
             // Act

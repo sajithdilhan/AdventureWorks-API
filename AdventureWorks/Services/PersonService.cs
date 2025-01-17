@@ -29,9 +29,9 @@ public class PersonService : IPersonService
         return list;
     }
 
-    public async Task<PersonDto?> GetPersonAsync(int id, bool includeDetails)
+    public async Task<PersonDto?> GetPersonByIdAsync(int id, bool includeDetails)
     {
-        var person = await _personRepository.GetPersonAsync(id, includeDetails);
+        var person = await _personRepository.GetPersonAsync(p => p.BusinessEntityID == id, includeDetails);
         return person?.ToPersonDto();
     }
 
@@ -44,7 +44,7 @@ public class PersonService : IPersonService
 
     public async Task<bool> UpdatePersonAsync(int id, PersonDto personDto)
     {
-        var person = await _personRepository.GetPersonAsync(id, true);
+        var person = await _personRepository.GetPersonAsync(p => p.BusinessEntityID == id, true);
         if (person == null)
         {
             return false;
@@ -57,7 +57,7 @@ public class PersonService : IPersonService
 
     public async Task<bool> DeletePersonAsync(int id)
     {
-        var person = await _personRepository.GetPersonAsync(id, true);
+        var person = await _personRepository.GetPersonAsync(p => p.BusinessEntityID == id, true);
         if (person == null)
         {
             return false;
