@@ -1,128 +1,119 @@
 ﻿using AdventureWorks.Database;
 using AdventureWorks.Models.Person;
 using Microsoft.EntityFrameworkCore;
+using System.Linq.Expressions;
 
-namespace AdventureWorks.Repositories
+namespace AdventureWorks.Repositories;
+
+public class PersonRepository(ILogger<PersonRepository> logger, ApplicationDbContext applicationDbContext) : IPersonRepository
 {
-    public class PersonRepository : IPersonRepository
+    public async Task<int> GetTotalCount(PersonQuery query)
     {
-        private readonly ApplicationDbContext _dbcontext;
-        private readonly ILogger<PersonRepository> _logger;
+        return await applicationDbContext.Persons.AsNoTracking().CountAsync();
+    }
 
-        public PersonRepository(ILogger<PersonRepository> logger, ApplicationDbContext applicationDbContext)
+    public async Task<Person?> GetPersonAsync(Expression<Func<Person, bool>> predicate, bool includeDetails)
+    {
+        try
         {
-            _dbcontext = applicationDbContext;
-            _logger = logger;
-        }
-
-        public async Task<int> GetTotalCount(PersonQuery query)
-        {
-            return await _dbcontext.Persons.AsNoTracking().CountAsync();
-        }
-
-        public async Task<Person?> GetPersonAsync(int id, bool includeDetails)
-        {
-            try
+            var query = applicationDbContext.Persons.AsNoTracking();
+            if (includeDetails)
             {
-                var query = _dbcontext.Persons.AsNoTracking();
-                if (includeDetails)
-                {
-                    query = query
-                        .Include(p => p.EmailAddresses)
-                        .Include(p => p.PersonPhones)
-                        .AsSplitQuery();
-                }
-
-                return await query.FirstOrDefaultAsync(p => p.BusinessEntityID == id);
-            }
-            catch (Exception ex)
-            {
-                _logger.LogError("Failed to get people from database with ID {}. {}", id, ex.Message);
-                throw;
-            }
-        }
-
-        public async Task<List<Person>> GetPersonsAsync(PersonQuery queryParam)
-        {
-            try
-            {
-                var query = _dbcontext.Persons
-                    .AsNoTrackingWithIdentityResolution()
+                query = query
                     .Include(p => p.EmailAddresses)
                     .Include(p => p.PersonPhones)
                     .AsSplitQuery();
+            }
 
-                if (queryParam?.SortBy == "FirstName")
+            return await query.FirstOrDefaultAsync(predicate);
+        }
+        catch (Exception ex)
+        {
+            logger.LogError("Failed to get people from database. {}", ex.Message);
+            throw;
+        }
+    }
+
+    public async Task<List<Person>> GetPersonsAsync(PersonQuery queryParam)
+    {
+        try
+        {
+            var query = applicationDbContext.Persons
+                .AsNoTrackingWithIdentityResolution()
+                .Include(p => p.EmailAddresses)
+                .Include(p => p.PersonPhones)
+                .AsSplitQuery();
+
+            if (queryParam?.SortBy == "FirstName")
+            {
+                if (queryParam?.SortOrder == "desc")
                 {
-                    if (queryParam?.SortOrder == "desc")
-                    {
-                        query = query.OrderByDescending(p => p.FirstName);
-                    }
-                    else
-                    {
-                        query = query.OrderBy(p => p.FirstName);
-                    }
-                }
-                else if (queryParam?.SortBy == "LastName")
-                {
-                    if (queryParam?.SortOrder == "desc")
-                    {
-                        query = query.OrderByDescending(p => p.FirstName);
-                    }
-                    else
-                    {
-                        query = query.OrderBy(p => p.FirstName);
-                    }
+                    query = query.OrderByDescending(p => p.FirstName);
                 }
                 else
                 {
-                    query = query.OrderBy(p => p.BusinessEntityID);
+                    query = query.OrderBy(p => p.FirstName);
                 }
-
-                if (queryParam?.PageSize > 0)
+            }
+            else if (queryParam?.SortBy == "LastName")
+            {
+                if (queryParam?.SortOrder == "desc")
                 {
-                    query = query.Skip(queryParam.PageNumber * queryParam.PageSize).Take(queryParam.PageSize);
+                    query = query.OrderByDescending(p => p.FirstName);
                 }
-
-                return await query.ToListAsync();
+                else
+                {
+                    query = query.OrderBy(p => p.FirstName);
+                }
             }
-            catch (Exception ex)
+            else
             {
-                _logger.LogError("Failed to get people from database. {}", ex.Message);
-                throw;
+                query = query.OrderBy(p => p.BusinessEntityID);
             }
+
+            if (queryParam?.PageSize > 0)
+            {
+                query = query.Skip(queryParam.PageNumber * queryParam.PageSize).Take(queryParam.PageSize);
+            }
+
+            return await query.ToListAsync();
         }
-
-        async Task<Person> IPersonRepository.CreatePersonAsync(Person person)
+        catch (Exception ex)
         {
-            await _dbcontext.Persons.AddAsync(person);
-            await _dbcontext.SaveChangesAsync();
-            return person;
+            logger.LogError("Failed to get people from database. {}", ex.Message);
+            throw;
         }
+    }
 
-        public async Task<bool> DeletePersonAsync(int id)
+    public async Task<Person> CreatePersonAsync(Person person)
+    {
+        await applicationDbContext.Persons.AddAsync(person);
+        await applicationDbContext.SaveChangesAsync();
+        return person;
+    }
+
+    public async Task<bool> DeletePersonAsync(int id)
+    {
+        var person = await GetPersonAsync(x=>x.BusinessEntityID == id, false);
+        if (person == null)
         {
-            var person = await GetPersonAsync(id, true);
-            if (person == null)
-            {
-                return false;
-            }
-
-            _dbcontext.Persons.Remove(person);
-            int result = await _dbcontext.SaveChangesAsync();
-            if (result > 0)
-            {
-                return true;
-            }
-
             return false;
         }
 
-        public async Task<Person> UpdatePersonAsync(Person person)
+        applicationDbContext.Persons.Remove(person);
+        int result = await applicationDbContext.SaveChangesAsync();
+        if (result > 0)
         {
-            _dbcontext.Persons.Update(person);
-            await _dbcontext.SaveChangesAsync();
-            return person;
+            return true;
         }
+
+        return false;
+    }
+
+    public async Task<Person> UpdatePersonAsync(Person person)
+    {
+        applicationDbContext.Persons.Update(person);
+        await applicationDbContext.SaveChangesAsync();
+        return person;
     }
 }

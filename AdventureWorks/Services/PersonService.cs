@@ -5,21 +5,16 @@ using AdventureWorks.Utility;
 
 namespace AdventureWorks.Services;
 
-public class PersonService : IPersonService
+public class PersonService(IPersonRepository personRepository) : IPersonService
 {
-    private readonly IPersonRepository _personRepository;
-
-    public PersonService(IPersonRepository personRepository)
-    {
-        _personRepository = personRepository;
-    }
-
     public async Task<PaginatedList<PersonDto>> GetPersonsAsync(PersonQuery query)
     {
-        PaginatedList<PersonDto> list = new();
-        list.Data = new();
-        int total = await _personRepository.GetTotalCount(query);
-        var result = await _personRepository.GetPersonsAsync(query);
+        PaginatedList<PersonDto> list = new()
+        {
+            Data = []
+        };
+        int total = await personRepository.GetTotalCount(query);
+        var result = await personRepository.GetPersonsAsync(query);
         list.Data = result.ToPersonDto();
 
         int totalPages = (int)Math.Ceiling((double)total / query.PageSize);
@@ -29,41 +24,41 @@ public class PersonService : IPersonService
         return list;
     }
 
-    public async Task<PersonDto?> GetPersonAsync(int id, bool includeDetails)
+    public async Task<PersonDto?> GetPersonByIdAsync(int id, bool includeDetails)
     {
-        var person = await _personRepository.GetPersonAsync(id, includeDetails);
+        var person = await personRepository.GetPersonAsync(p => p.BusinessEntityID == id, includeDetails);
         return person?.ToPersonDto();
     }
 
     public async Task<PersonDto> CreatePersonAsync(PersonDto personDto)
     {
         var person = personDto.ToPerson();
-        person = await _personRepository.CreatePersonAsync(person);
+        person = await personRepository.CreatePersonAsync(person);
         return person.ToPersonDto();
     }
 
     public async Task<bool> UpdatePersonAsync(int id, PersonDto personDto)
     {
-        var person = await _personRepository.GetPersonAsync(id, true);
+        var person = await personRepository.GetPersonAsync(p => p.BusinessEntityID == id, true);
         if (person == null)
         {
             return false;
         }
 
         SetPersonData(personDto, person);
-        await _personRepository.UpdatePersonAsync(person);
+        await personRepository.UpdatePersonAsync(person);
         return true;
     }
 
     public async Task<bool> DeletePersonAsync(int id)
     {
-        var person = await _personRepository.GetPersonAsync(id, true);
+        var person = await personRepository.GetPersonAsync(p => p.BusinessEntityID == id, true);
         if (person == null)
         {
             return false;
         }
 
-        await _personRepository.DeletePersonAsync(id);
+        await personRepository.DeletePersonAsync(id);
         return true;
     }
 
