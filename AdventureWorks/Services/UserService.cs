@@ -2,63 +2,53 @@
 using AdventureWorks.Repositories;
 using AdventureWorks.Utility;
 
-namespace AdventureWorks.Services
+namespace AdventureWorks.Services;
+
+public class UserService(ILogger<UserService> logger, IUserRepository userRepository) : IUserService
 {
-    public class UserService : IUserService
+    public bool IsAuthenticated(string? password, string? passwordHash)
     {
-        private readonly ILogger<UserService> _logger;
-        private readonly IUserRepository _userRepository;
-
-        public UserService(ILogger<UserService> logger, IUserRepository userRepository)
+        try
         {
-            _logger = logger;
-            _userRepository = userRepository;
+            ArgumentNullException.ThrowIfNull(password);
+            ArgumentNullException.ThrowIfNull(passwordHash);
+
+            return BCrypt.Net.BCrypt.Verify(password, passwordHash);
+        }
+        catch (Exception ex)
+        {
+            logger.LogError("Failed to authenticate user. {}", ex.Message);
+            throw;
+        }       
+    }
+
+    public async Task<AppUserDto?> GetUserByIdAsync(Guid id)
+    {
+        if (id == Guid.Empty)
+        {
+            return null;
         }
 
-        public bool IsAuthenticated(string? password, string? passwordHash)
+        var user = await userRepository.GetUserByIdAsync(id);
+        if (user.Id == Guid.Empty)
         {
-            try
-            {
-                ArgumentNullException.ThrowIfNull(password);
-                ArgumentNullException.ThrowIfNull(passwordHash);
+            return null;
+        }
+        return user.ToAppUserDto();
+    }
 
-                return BCrypt.Net.BCrypt.Verify(password, passwordHash);
-            }
-            catch (Exception ex)
-            {
-                _logger.LogError("Failed to authenticate user. {}", ex.Message);
-                throw;
-            }       
+    public async Task<AppUserDto?> GetUserByUsernameAsync(string username)
+    {
+        if (string.IsNullOrEmpty(username))
+        {
+            return null;
         }
 
-        public async Task<AppUserDto?> GetUserByIdAsync(Guid id)
+        var user = await userRepository.GetUserByUserNameAsync(username);
+        if (user.Id == Guid.Empty)
         {
-            if (id == Guid.Empty)
-            {
-                return null;
-            }
-
-            var user = await _userRepository.GetUserByIdAsync(id);
-            if (user.Id == Guid.Empty)
-            {
-                return null;
-            }
-            return user.ToAppUserDto();
+            return null;
         }
-
-        public async Task<AppUserDto?> GetUserByUsernameAsync(string username)
-        {
-            if (string.IsNullOrEmpty(username))
-            {
-                return null;
-            }
-
-            var user = await _userRepository.GetUserByUserNameAsync(username);
-            if (user.Id == Guid.Empty)
-            {
-                return null;
-            }
-            return user.ToAppUserDto();
-        }
+        return user.ToAppUserDto();
     }
 }

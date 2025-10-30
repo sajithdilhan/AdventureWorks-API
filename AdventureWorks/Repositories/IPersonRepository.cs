@@ -7,7 +7,7 @@ namespace AdventureWorks.Repositories
     {
         Task<List<Person>> GetPersonsAsync(PersonQuery query);
         Task<int> GetTotalCount(PersonQuery query);
-        Task<Person?> GetPersonAsync(int id, bool includeDetails);
+        Task<Person?> GetPersonAsync(Expression<Func<Person, bool>> predicate, bool includeDetails);
         Task<Person> CreatePersonAsync(Person person);
         Task<Person> UpdatePersonAsync(Person person);
         Task<bool> DeletePersonAsync(int id);

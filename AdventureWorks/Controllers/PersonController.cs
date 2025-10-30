@@ -12,33 +12,24 @@ namespace AdventureWorks.Controllers
     [Authorize]
     public class PersonController : ControllerBase
     {
-        private readonly ILogger<PersonController> _logger;
-        private readonly IPersonService _personService;
-
-        public PersonController(ILogger<PersonController> logger, IPersonService personService)
-        {
-            _logger = logger;
-            _personService = personService;
-        }
-
         [HttpGet(Name = "GetPerson")]
         public async Task<IActionResult> GetPersonsAsync([FromQuery] PersonQuery query)
         {
             try
             {
-                var list = await _personService.GetPersonsAsync(query);
+                var list = await personService.GetPersonsAsync(query);
                 if (list.Data.Count == 0)
                 {
                     return NotFound();
                 }
 
-                _logger.LogInformation("Returning {Count} people", list.Data.Count);
+                logger.LogInformation("Returning {Count} people", list.Data.Count);
 
                 return Ok(list);
             }
             catch (Exception ex)
             {
-                _logger.LogError(ex.Message);
+                logger.LogError(ex.Message);
                 return Problem(detail: "Internal Server Error", statusCode: 500);
             }
         }
@@ -49,19 +40,19 @@ namespace AdventureWorks.Controllers
         {
             try
             {
-                var person = await _personService.GetPersonAsync(id, true);
+                var person = await personService.GetPersonByIdAsync(id, true);
                 if (person == null)
                 {
                     return NotFound();
                 }
 
-                _logger.LogInformation("Returning person with ID {ID}", id);
+                logger.LogInformation("Returning person with ID {ID}", id);
 
                 return Ok(person);
             }
             catch (Exception ex)
             {
-                _logger.LogError(ex.Message);
+                logger.LogError(ex.Message);
                 return Problem(detail: "Internal Server Error", statusCode: 500);
             }
         }
@@ -76,14 +67,14 @@ namespace AdventureWorks.Controllers
 
             try
             {
-                _logger.LogInformation("Creating person: {}", JsonSerializer.Serialize<PersonDto>(personDto));
-                personDto = await _personService.CreatePersonAsync(personDto);
-                _logger.LogInformation("Person created: {} {}", personDto.FirstName, personDto.LastName);
+                logger.LogInformation("Creating person: {}", JsonSerializer.Serialize<PersonDto>(personDto));
+                personDto = await personService.CreatePersonAsync(personDto);
+                logger.LogInformation("Person created: {} {}", personDto.FirstName, personDto.LastName);
                 return CreatedAtRoute("GetPerson", new { id = personDto.BusinessEntityId });
             }
             catch (Exception ex)
             {
-                _logger.LogError(ex.Message);
+                logger.LogError(ex.Message);
                 return Problem(detail: "Internal Server Error", statusCode: 500);
             }
         }
@@ -95,19 +86,19 @@ namespace AdventureWorks.Controllers
         {
             try
             {
-                _logger.LogInformation("Deleting person with ID {ID}", id);
-                var result = await _personService.DeletePersonAsync(id);
+                logger.LogInformation("Deleting person with ID {ID}", id);
+                var result = await personService.DeletePersonAsync(id);
                 if (!result)
                 {
                     return NotFound();
                 }
 
-                _logger.LogInformation("Person with ID {ID} deleted", id);
+                logger.LogInformation("Person with ID {ID} deleted", id);
                 return NoContent();
             }
             catch (Exception ex)
             {
-                _logger.LogError(ex.Message);
+                logger.LogError(ex.Message);
                 return Problem(detail: "Internal Server Error", statusCode: 500);
             }
         }
@@ -123,18 +114,18 @@ namespace AdventureWorks.Controllers
 
             try
             {
-                var result = await _personService.UpdatePersonAsync(id, personDto);
+                var result = await personService.UpdatePersonAsync(id, personDto);
                 if (!result)
                 {
                     return NotFound();
                 }
 
-                _logger.LogInformation("Person with ID {ID} updated", id);
+                logger.LogInformation("Person with ID {ID} updated", id);
                 return NoContent();
             }
             catch (Exception ex)
             {
-                _logger.LogError(ex.Message);
+                logger.LogError(ex.Message);
                 return Problem(detail: "Internal Server Error", statusCode: 500);
             }
         }

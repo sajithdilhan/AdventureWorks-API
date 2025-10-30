@@ -2,95 +2,85 @@
 using AdventureWorks.Models.Identity;
 using Microsoft.EntityFrameworkCore;
 
-namespace AdventureWorks.Repositories
+namespace AdventureWorks.Repositories;
+
+public class UserRepository(ApplicationDbContext dbContext, ILogger<UserRepository> logger) : IUserRepository
 {
-    public class UserRepository : IUserRepository
+    public async Task AddUserAsync(User user)
     {
-        private readonly ApplicationDbContext _dbContext;
-        private readonly ILogger<UserRepository> _logger;
+       await  dbContext.AppUsers.AddAsync(user);
+       await dbContext.SaveChangesAsync();
+       logger.LogInformation("Saved user : {}", user.UserName);
+    }
 
-        public UserRepository(ApplicationDbContext dbContext, ILogger<UserRepository> logger)
+    public async Task<bool> DeleteUserAsync(Guid id)
+    {
+        var user = await GetUserByIdAsync(id);
+        if (user.Id == Guid.Empty)
         {
-            _dbContext = dbContext;
-            _logger = logger;
-        }
-
-        public async Task AddUserAsync(User user)
-        {
-           await  _dbContext.AppUsers.AddAsync(user);
-           await _dbContext.SaveChangesAsync();
-           _logger.LogInformation("Saved user : {}", user.UserName);
-        }
-
-        public async Task<bool> DeleteUserAsync(Guid id)
-        {
-            var user = await GetUserByIdAsync(id);
-            if (user.Id == Guid.Empty)
-            {
-                return false;
-            }
-            _dbContext.AppUsers.Remove(user);
-            int result = await _dbContext.SaveChangesAsync();
-            if (result > 0)
-            {
-                return true;
-            }
             return false;
         }
-
-        public async Task<User> GetUserByEmailAsync(string email)
+        dbContext.AppUsers.Remove(user);
+        int result = await dbContext.SaveChangesAsync();
+        if (result > 0)
         {
-            try
-            {
-                var user = await _dbContext.AppUsers.FirstOrDefaultAsync(u => u.Email == email);
-                if (user != null) return user;
-                _logger.LogWarning("User with Email {} not found in database", email);
-                return new User();
-            }
-            catch (Exception ex)
-            {
-                _logger.LogError("Failed to get user from database with Email {} {}", email, ex.Message);
-                throw;
-            }
+            return true;
         }
+        return false;
+    }
 
-        public async Task<User> GetUserByIdAsync(Guid id)
+    public async Task<User> GetUserByEmailAsync(string email)
+    {
+        try
         {
-            try
-            {
-                var user = await _dbContext.AppUsers.FindAsync(id);
-                if (user != null) return user;
-                _logger.LogWarning("User with ID {} not found in database", id);
-                return new User();
-            }
-            catch (Exception ex)
-            {
-                _logger.LogError("Failed to get user from database with ID {} {}", id, ex.Message);
-                throw;
-            }
+            var user = await dbContext.AppUsers.FirstOrDefaultAsync(u => u.Email == email);
+            if (user != null) return user;
+            logger.LogWarning("User with Email {} not found in database", email);
+            return new User();
         }
+        catch (Exception ex)
+        {
+            logger.LogError("Failed to get user from database with Email {} {}", email, ex.Message);
+            throw;
+        }
+    }
 
-        public async Task<User> GetUserByUserNameAsync(string userName)
+    public async Task<User> GetUserByIdAsync(Guid id)
+    {
+        try
         {
-            try
-            {
-                var user =  await _dbContext.AppUsers.FirstOrDefaultAsync(u => u.UserName == userName);
-                if (user != null) return user;
-                _logger.LogWarning("User with Username {} not found in database", userName);
-                return new User();
-            }
-            catch (Exception ex)
-            {
-                _logger.LogError("Failed to get user from database with Username {} {}", userName, ex.Message);
-                throw;
-            }
+            var user = await dbContext.AppUsers.FindAsync(id);
+            if (user != null) return user;
+            logger.LogWarning("User with ID {} not found in database", id);
+            return new User();
         }
+        catch (Exception ex)
+        {
+            logger.LogError("Failed to get user from database with ID {} {}", id, ex.Message);
+            throw;
+        }
+    }
 
-        public Task<User> UpdateUserAsync(User user)
+    public async Task<User> GetUserByUserNameAsync(string userName)
+    {
+        try
         {
-            _dbContext.AppUsers.Update(user);
-            _dbContext.SaveChanges();
-            return Task.FromResult(user);
+            var user =  await dbContext.AppUsers.FirstOrDefaultAsync(u => u.UserName == userName);
+            if (user != null) return user;
+            logger.LogWarning("User with Username {} not found in database", userName);
+            return new User();
         }
+        catch (Exception ex)
+        {
+            logger.LogError("Failed to get user from database with Username {} {}", userName, ex.Message);
+            throw;
+        }
+    }
+
+    public Task<User> UpdateUserAsync(User user)
+    {
+        dbContext.AppUsers.Update(user);
+        dbContext.SaveChanges();
+        return Task.FromResult(user);
     }
 }

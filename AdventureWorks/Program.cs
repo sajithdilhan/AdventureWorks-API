@@ -88,11 +88,13 @@ builder.Services.AddSwaggerGen(options =>
 });
 
 // Add custom services
-builder.Services.AddTransient<IPersonRepository, PersonRepository>();
-builder.Services.AddTransient<IPersonService, PersonService>();
-builder.Services.AddTransient<IUserService, UserService>();
-builder.Services.AddTransient<ITokenService, TokenService>();
-builder.Services.AddTransient<IUserRepository, UserRepository>();
+builder.Services.AddSingleton<IMemoryCache, MemoryCache>();
+builder.Services.AddScoped<IPersonRepository, PersonRepository>();
+builder.Services.AddScoped<PersonService>();
+builder.Services.AddScoped<IPersonService, MemoryCachedPersonService>();
+builder.Services.AddScoped<IUserService, UserService>();
+builder.Services.AddScoped<ITokenService, TokenService>();
+builder.Services.AddScoped<IUserRepository, UserRepository>();
 
 var healthCheckBuilder = builder.Services.AddHealthChecks()
     .AddCheck("self", () => HealthCheckResult.Healthy());
