@@ -1,16 +1,15 @@
 ﻿using AdventureWorks.Models.Identity;
 using AdventureWorks.Models.Person;
-using AdventureWorks.Utility;
+using AdventureWorks.Services;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using System.Text.Json;
-using AdventureWorks.Services;
 
 namespace AdventureWorks.Controllers
 {
     [Route("api/[controller]")]
     [ApiController]
-    //[Authorize]
+    [Authorize]
     public class PersonController : ControllerBase
     {
         private readonly ILogger<PersonController> _logger;
@@ -70,7 +69,7 @@ namespace AdventureWorks.Controllers
         [HttpPost]
         public async Task<IActionResult> CreatePersonAsync([FromBody] PersonDto personDto)
         {
-            if (ModelState.IsValid == false)
+            if (!ModelState.IsValid)
             {
                 return BadRequest(ModelState);
             }
@@ -117,7 +116,7 @@ namespace AdventureWorks.Controllers
         [Route("{id}")]
         public async Task<IActionResult> UpdatePersonAsync([FromRoute] int id, [FromBody] PersonDto personDto)
         {
-            if (ModelState.IsValid == false)
+            if (!ModelState.IsValid)
             {
                 return BadRequest(ModelState);
             }

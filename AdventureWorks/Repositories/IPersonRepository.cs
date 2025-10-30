@@ -1,4 +1,5 @@
 ﻿using AdventureWorks.Models.Person;
+using System.Linq.Expressions;
 
 namespace AdventureWorks.Repositories
 {
@@ -10,5 +11,6 @@ namespace AdventureWorks.Repositories
         Task<Person> CreatePersonAsync(Person person);
         Task<Person> UpdatePersonAsync(Person person);
         Task<bool> DeletePersonAsync(int id);
+        Task<List<Person>> GetPersonFiltered(Expression<Func<Person, bool>> predicate);
     }
 }

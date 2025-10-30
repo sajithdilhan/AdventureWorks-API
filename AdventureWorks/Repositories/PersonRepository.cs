@@ -1,6 +1,7 @@
 ﻿using AdventureWorks.Database;
 using AdventureWorks.Models.Person;
 using Microsoft.EntityFrameworkCore;
+using System.Linq.Expressions;
 
 namespace AdventureWorks.Repositories
 {
@@ -123,6 +124,11 @@ namespace AdventureWorks.Repositories
             _dbcontext.Persons.Update(person);
             await _dbcontext.SaveChangesAsync();
             return person;
+        }
+
+        public async Task<List<Person>> GetPersonFiltered(Expression<Func<Person, bool>> predicate)
+        {
+           return await _dbcontext.Persons.Where(predicate).ToListAsync();
         }
     }
 }

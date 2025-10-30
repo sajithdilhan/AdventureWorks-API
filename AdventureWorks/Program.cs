@@ -5,12 +5,15 @@ using AdventureWorks.Services;
 using Asp.Versioning;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Diagnostics.HealthChecks;
 using Microsoft.IdentityModel.Tokens;
 using Microsoft.OpenApi.Models;
 using System.Text;
 using System.Text.Json.Serialization;
 
 var builder = WebApplication.CreateBuilder(args);
+
+builder.AddServiceDefaults();
 
 // Add services to the container.
 var jwtOptionsSection = builder.Configuration.GetRequiredSection("Jwt");
@@ -28,7 +31,7 @@ builder.Services.AddAuthentication(options =>
     .AddJwtBearer("Bearer", jwtOptions =>
     {
         var configKey = jwtOptionsSection["Key"];
-        var key = Encoding.UTF8.GetBytes(configKey?? string.Empty);
+        var key = Encoding.UTF8.GetBytes(configKey ?? string.Empty);
 
         jwtOptions.TokenValidationParameters = new TokenValidationParameters
         {
@@ -40,11 +43,9 @@ builder.Services.AddAuthentication(options =>
             ValidateIssuerSigningKey = true
         };
     });
-builder.Services.AddAuthorization(options =>
-{
-    options.AddPolicy(IdentityData.AdminUserPolicyName, policy => policy.RequireRole(IdentityData.AdminUserRoleName));
-    options.AddPolicy(IdentityData.NormalUserPolicyName, policy => policy.RequireRole(IdentityData.NormalUserRoleName));
-});
+builder.Services.AddAuthorizationBuilder()
+    .AddPolicy(IdentityData.AdminUserPolicyName, policy => policy.RequireRole(IdentityData.AdminUserRoleName))
+    .AddPolicy(IdentityData.NormalUserPolicyName, policy => policy.RequireRole(IdentityData.NormalUserRoleName));
 builder.Services.AddControllers().AddJsonOptions(options =>
 {
     options.JsonSerializerOptions.ReferenceHandler = ReferenceHandler.Preserve;
@@ -93,7 +94,18 @@ builder.Services.AddTransient<IUserService, UserService>();
 builder.Services.AddTransient<ITokenService, TokenService>();
 builder.Services.AddTransient<IUserRepository, UserRepository>();
 
+var healthCheckBuilder = builder.Services.AddHealthChecks()
+    .AddCheck("self", () => HealthCheckResult.Healthy());
+
+string? connectionString = builder.Configuration.GetConnectionString("AdventureWorks");
+if (!string.IsNullOrEmpty(connectionString))
+{
+    healthCheckBuilder.AddSqlServer(connectionString);
+}
+
 var app = builder.Build();
+
+app.MapDefaultEndpoints();
 
 // Configure the HTTP request pipeline.
 if (app.Environment.IsDevelopment())
@@ -109,8 +121,15 @@ if (app.Environment.IsDevelopment())
 
 app.UseHttpsRedirection();
 
+app.UseAuthentication();
+
 app.UseAuthorization();
 
 app.MapControllers();
+
+app.MapHealthChecks("/health/live");
+
+// Readiness - checks dependencies
+app.MapHealthChecks("/health/ready");
 
 app.Run();
