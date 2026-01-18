@@ -76,7 +76,26 @@ public class PersonRepository(ILogger<PersonRepository> logger, ApplicationDbCon
                 query = query.Skip(queryParam.PageNumber * queryParam.PageSize).Take(queryParam.PageSize);
             }
 
-            return await query.ToListAsync();
+            return await query.Select(p => new Person 
+            { 
+                BusinessEntityID = p.BusinessEntityID, 
+                EmailAddresses = p.EmailAddresses, 
+                FirstName = p.FirstName,
+                LastName = p.LastName,
+                PersonPhones = p.PersonPhones,
+                Gender = p.Gender == null ? null : p.Gender.Trim(),
+                MiddleName = p.MiddleName,
+                Title = p.Title,
+                PersonType = p.PersonType,
+                AdditionalContactInfo = p.AdditionalContactInfo,
+                Suffix = p.Suffix,
+                EmailPromotion = p.EmailPromotion,
+                ModifiedDate = p.ModifiedDate,
+                Demographics = p.Demographics,
+                NameStyle = p.NameStyle,
+                Rowguid = p.Rowguid
+
+            }).ToListAsync();
         }
         catch (Exception ex)
         {
@@ -94,7 +113,7 @@ public class PersonRepository(ILogger<PersonRepository> logger, ApplicationDbCon
 
     public async Task<bool> DeletePersonAsync(int id)
     {
-        var person = await GetPersonAsync(x=>x.BusinessEntityID == id, false);
+        var person = await GetPersonAsync(x => x.BusinessEntityID == id, false);
         if (person == null)
         {
             return false;
@@ -110,16 +129,15 @@ public class PersonRepository(ILogger<PersonRepository> logger, ApplicationDbCon
         return false;
     }
 
-        public async Task<Person> UpdatePersonAsync(Person person)
-        {
-            _dbcontext.Persons.Update(person);
-            await _dbcontext.SaveChangesAsync();
-            return person;
-        }
+    public async Task<Person> UpdatePersonAsync(Person person)
+    {
+        applicationDbContext.Persons.Update(person);
+        await applicationDbContext.SaveChangesAsync();
+        return person;
+    }
 
-        public async Task<List<Person>> GetPersonFiltered(Expression<Func<Person, bool>> predicate)
-        {
-           return await _dbcontext.Persons.Where(predicate).ToListAsync();
-        }
+    public async Task<List<Person>> GetPersonFiltered(Expression<Func<Person, bool>> predicate)
+    {
+        return await applicationDbContext.Persons.Where(predicate).ToListAsync();
     }
 }

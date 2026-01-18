@@ -20,6 +20,7 @@ public static class Extensions
             ModifiedDate = person.ModifiedDate,
             PersonType = person.PersonType,
             Suffix = person.Suffix,
+            Gender = person.Gender,
             EmailAddresses = person.EmailAddresses.Any() ? 
                 person.EmailAddresses.Select(e => e.EmailAddress).ToList() : [],
             PhoneNumbers = person.PersonPhones.Any() ?

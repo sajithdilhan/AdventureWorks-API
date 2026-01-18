@@ -32,6 +32,9 @@ public class Person
     [MaxLength(10)]
     public string? Suffix { get; set; } // Nullable as per SQL definition
 
+    [MaxLength(10)]
+    public string? Gender { get; set; } // Nullable as per SQL definition
+
     public int EmailPromotion { get; set; }
 
     public string? AdditionalContactInfo { get; set; } // Nullable for XML

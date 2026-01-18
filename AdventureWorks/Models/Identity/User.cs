@@ -3,7 +3,7 @@ using System.ComponentModel.DataAnnotations.Schema;
 
 namespace AdventureWorks.Models.Identity
 {
-    [Table("Identity.User", Schema = "Auth")]
+    [Table("User", Schema = "Identity")]
     public class User
     {
         [Key]

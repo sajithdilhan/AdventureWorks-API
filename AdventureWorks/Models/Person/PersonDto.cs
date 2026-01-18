@@ -22,6 +22,8 @@ public class PersonDto
     public string? Suffix { get; set; }
     [Required]
     public int EmailPromotion { get; set; }
+    [StringLength(2)]
+    public string? Gender { get; set; }
 
     [JsonIgnore]
     public string? AdditionalContactInfo { get; set; } 

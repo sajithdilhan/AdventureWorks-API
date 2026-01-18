@@ -8,6 +8,8 @@ using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Diagnostics.HealthChecks;
 using Microsoft.IdentityModel.Tokens;
 using Microsoft.OpenApi.Models;
+using OpenTelemetry.Resources;
+using OpenTelemetry.Trace;
 using System.Text;
 using System.Text.Json.Serialization;
 
@@ -88,10 +90,8 @@ builder.Services.AddSwaggerGen(options =>
 });
 
 // Add custom services
-builder.Services.AddSingleton<IMemoryCache, MemoryCache>();
 builder.Services.AddScoped<IPersonRepository, PersonRepository>();
-builder.Services.AddScoped<PersonService>();
-builder.Services.AddScoped<IPersonService, MemoryCachedPersonService>();
+builder.Services.AddScoped<IPersonService,PersonService>();
 builder.Services.AddScoped<IUserService, UserService>();
 builder.Services.AddScoped<ITokenService, TokenService>();
 builder.Services.AddScoped<IUserRepository, UserRepository>();
@@ -104,6 +104,18 @@ if (!string.IsNullOrEmpty(connectionString))
 {
     healthCheckBuilder.AddSqlServer(connectionString);
 }
+
+builder.Services.AddOpenTelemetry()
+    .WithTracing(tracing =>
+    {
+        tracing
+            .SetResourceBuilder(
+                ResourceBuilder.CreateDefault()
+                    .AddService("AdventureWorks"))
+            .AddAspNetCoreInstrumentation()
+            .AddHttpClientInstrumentation()
+            .AddConsoleExporter();
+    });
 
 var app = builder.Build();
 

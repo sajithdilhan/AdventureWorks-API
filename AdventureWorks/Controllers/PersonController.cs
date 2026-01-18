@@ -3,6 +3,7 @@ using AdventureWorks.Models.Person;
 using AdventureWorks.Services;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using System.Diagnostics;
 using System.Text.Json;
 
 namespace AdventureWorks.Controllers
@@ -12,6 +13,18 @@ namespace AdventureWorks.Controllers
     [Authorize]
     public class PersonController : ControllerBase
     {
+        private readonly IPersonService personService;
+        private readonly ILogger<PersonController> logger;
+        private static readonly ActivitySource ActivitySource =
+    new("AdventureWorks");
+
+        public PersonController(IPersonService personService, ILogger<PersonController> logger)
+        {
+            this.personService = personService;
+            this.logger = logger;
+        }
+
+
         [HttpGet(Name = "GetPerson")]
         public async Task<IActionResult> GetPersonsAsync([FromQuery] PersonQuery query)
         {
@@ -40,6 +53,10 @@ namespace AdventureWorks.Controllers
         {
             try
             {
+                using var activity = ActivitySource.StartActivity("GetPersonById");
+
+                activity?.SetTag("person.id", id);
+
                 var person = await personService.GetPersonByIdAsync(id, true);
                 if (person == null)
                 {
